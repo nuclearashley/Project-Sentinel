@@ -1,0 +1,3 @@
+This is a plain text file.
+It should be rejected as an unsupported format.
+The system should handle this gracefully.
