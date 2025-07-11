@@ -49,7 +49,7 @@ Project Sentinel is a comprehensive AI-driven malware detection system that anal
 
 ### Step 1: Clone the Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/nuclearashley/Project-Sentinel.git
 cd Project-Sentinel
 ```
 
