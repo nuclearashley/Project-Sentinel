@@ -66,6 +66,8 @@ venv\Scripts\activate
 ```
 
 ### Step 3: Install Dependencies
+
+#### Option A: Standard Installation (Recommended)
 ```bash
 # Upgrade pip
 pip install --upgrade pip
@@ -74,11 +76,54 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+#### Option B: If You Encounter Compilation Errors
+If you get errors like "metadata-generation-failed" or Cython compilation errors, try:
+
+```bash
+# For macOS users - install build tools first
+xcode-select --install
+
+# Try installing with pre-compiled wheels only
+pip install --only-binary=all -r requirements.txt
+```
+
+#### Option C: Minimal Installation (Troubleshooting)
+If the standard installation fails, use the minimal requirements:
+
+```bash
+# Install minimal requirements
+pip install -r requirements-minimal.txt
+```
+
+#### Option D: Manual Installation (Last Resort)
+If all else fails, install packages individually:
+
+```bash
+# Install core packages first
+pip install Flask Flask-CORS requests
+
+# Install document processing
+pip install python-docx openpyxl pdfminer.six pefile
+
+# Install machine learning packages (may take longer)
+pip install numpy scipy scikit-learn
+```
+
 ### Step 4: Verify Installation
+
+#### Quick Verification
 ```bash
 # Check if all packages are installed correctly
 pip list
 ```
+
+#### Comprehensive Test (Recommended)
+```bash
+# Run the installation test script
+python test_installation.py
+```
+
+This script will test all package imports and provide specific guidance if any packages fail to load.
 
 ## Running the Application
 
@@ -194,21 +239,50 @@ python comprehensive_test.py
 
 ### Common Issues
 
-1. **Import Errors**:
+1. **Installation/Compilation Errors**:
+   - **"metadata-generation-failed" or Cython errors**: Common on macOS
+     ```bash
+     # Solution 1: Install build tools
+     xcode-select --install
+     
+     # Solution 2: Use pre-compiled wheels only
+     pip install --only-binary=all -r requirements.txt
+     
+     # Solution 3: Use minimal requirements
+     pip install -r requirements-minimal.txt
+     
+     # Solution 4: Install packages individually
+     pip install Flask Flask-CORS requests python-docx openpyxl pdfminer.six pefile numpy scipy scikit-learn
+     ```
+   
+   - **"No module named 'numpy'" during scikit-learn install**:
+     ```bash
+     # Install numpy first, then scikit-learn
+     pip install numpy
+     pip install scikit-learn
+     ```
+
+2. **Import Errors**:
    - Ensure virtual environment is activated
    - Verify all dependencies are installed: `pip install -r requirements.txt`
+   - If packages are missing, try: `pip install -r requirements-minimal.txt`
 
-2. **Port Already in Use**:
+3. **Port Already in Use**:
    - Change the port in `main.py`: `app.run(host='0.0.0.0', port=5002, debug=True)` (or any other available port)
 
-3. **File Upload Fails**:
+4. **File Upload Fails**:
    - Check file size (must be under 50MB)
    - Verify file format is supported (PDF, EXE, DOCX, XLSX)
 
-4. **Analysis Errors**:
+5. **Analysis Errors**:
    - Check console output for detailed error messages
    - Ensure file is not corrupted
    - Try with a different file to isolate the issue
+
+6. **macOS-Specific Issues**:
+   - **Command line tools not found**: Run `xcode-select --install`
+   - **Architecture mismatch**: Use `pip install --upgrade pip setuptools wheel`
+   - **Permission errors**: Ensure you're using a virtual environment
 
 ### Debug Mode
 The application runs in debug mode by default, providing detailed error messages in the console.

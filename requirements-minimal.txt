@@ -1,0 +1,25 @@
+# Minimal requirements for troubleshooting installation issues
+# Use this file if requirements.txt fails to install
+
+# Core Flask (most essential)
+Flask>=2.2.0
+Flask-CORS>=3.0.0
+requests>=2.25.0
+
+# Document Processing (basic versions)
+python-docx>=0.8.10
+openpyxl>=3.0.0
+pdfminer.six>=20211012
+
+# Binary Analysis
+pefile>=2022.5.30
+
+# Machine Learning (older, more stable versions)
+scikit-learn>=1.0.0
+numpy>=1.19.0
+scipy>=1.7.0
+
+# If even this fails, try installing packages one by one:
+# pip install Flask Flask-CORS requests
+# pip install python-docx openpyxl pdfminer.six pefile
+# pip install numpy scipy scikit-learn 
