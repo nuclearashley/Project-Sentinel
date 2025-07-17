@@ -10,6 +10,11 @@ const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 const error = document.getElementById('error');
 
+// Hash analysis elements
+const hashInput = document.getElementById('hashInput');
+const hashType = document.getElementById('hashType');
+const analyzeHashBtn = document.getElementById('analyzeHashBtn');
+
 // Drag and drop functionality
 uploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -73,6 +78,11 @@ function formatFileSize(bytes) {
 
 analyzeBtn.addEventListener('click', analyzeFile);
 
+// Hash analysis event listeners
+analyzeHashBtn.addEventListener('click', analyzeHash);
+hashInput.addEventListener('input', validateHashInput);
+hashType.addEventListener('change', validateHashInput);
+
 async function analyzeFile() {
     if (!selectedFile) {
         showError('Please select a file first.');
@@ -108,7 +118,96 @@ async function analyzeFile() {
     } finally {
         // Reset button state
         analyzeBtn.disabled = false;
-        analyzeBtn.textContent = '🔍 Analyze File for Threats';
+        analyzeBtn.textContent = 'Run Analysis';
+        loading.style.display = 'none';
+    }
+}
+
+function validateHashInput() {
+    const hash = hashInput.value.trim();
+    const selectedType = hashType.value;
+    
+    // Clear previous validation styling
+    hashInput.style.borderColor = '#ddd';
+    analyzeHashBtn.disabled = false;
+    
+    if (!hash) {
+        analyzeHashBtn.disabled = true;
+        return;
+    }
+    
+    // Check length based on hash type
+    let expectedLength = 64; // SHA-256 default
+    if (selectedType === 'md5') expectedLength = 32;
+    else if (selectedType === 'sha1') expectedLength = 40;
+    
+    if (hash.length !== expectedLength) {
+        hashInput.style.borderColor = '#dc3545';
+        analyzeHashBtn.disabled = true;
+        return;
+    }
+    
+    // Check if hash contains only hex characters
+    if (!/^[0-9a-fA-F]+$/.test(hash)) {
+        hashInput.style.borderColor = '#dc3545';
+        analyzeHashBtn.disabled = true;
+        return;
+    }
+    
+    // Valid hash
+    hashInput.style.borderColor = '#28a745';
+    analyzeHashBtn.disabled = false;
+}
+
+async function analyzeHash() {
+    const hash = hashInput.value.trim();
+    const selectedType = hashType.value;
+    
+    if (!hash) {
+        showError('Please enter a hash to analyze.');
+        return;
+    }
+    
+    // Validate hash format
+    validateHashInput();
+    if (analyzeHashBtn.disabled) {
+        showError('Please enter a valid hash format.');
+        return;
+    }
+    
+    // Show loading state
+    analyzeHashBtn.disabled = true;
+    analyzeHashBtn.textContent = 'Analyzing...';
+    loading.style.display = 'block';
+    hideError();
+    hideResults();
+    
+    try {
+        const response = await fetch('/api/analysis/hash', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                hash: hash,
+                hash_type: selectedType
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            displayResults(result);
+        } else {
+            showError(result.error || 'Hash analysis failed. Please try again.');
+        }
+    } catch (err) {
+        showError('Network error. Please check your connection and try again.');
+        console.error('Hash analysis error:', err);
+    } finally {
+        // Reset button state
+        analyzeHashBtn.disabled = false;
+        analyzeHashBtn.textContent = '🔍 Analyze Hash';
         loading.style.display = 'none';
     }
 }
@@ -143,10 +242,38 @@ function displayResults(result) {
     const threatColor = result.threat_score > 0.7 ? '#dc3545' : 
                        result.threat_score > 0.4 ? '#ffc107' : '#28a745';
     
+    // Determine if this is a hash analysis result
+    const isHashAnalysis = result.hash_type || result.filename.includes('Hash Analysis');
+    
+    // Check if this is a VirusTotal result
+    const isVirusTotalResult = result.details && result.details.source === 'VirusTotal API';
+    
+    // Generate additional info for VirusTotal results
+    let additionalInfo = '';
+    if (isVirusTotalResult && result.details) {
+        const details = result.details;
+        if (details.detection_ratio) {
+            additionalInfo += `<p><strong>Detection Ratio:</strong> ${details.detection_ratio}</p>`;
+        }
+        if (details.total_engines) {
+            additionalInfo += `<p><strong>Total Engines:</strong> ${details.total_engines}</p>`;
+        }
+        if (details.reputation !== undefined) {
+            additionalInfo += `<p><strong>Reputation Score:</strong> ${details.reputation}</p>`;
+        }
+        if (details.last_analysis_date) {
+            const date = new Date(details.last_analysis_date * 1000);
+            additionalInfo += `<p><strong>Last Analyzed:</strong> ${date.toLocaleDateString()}</p>`;
+        }
+    }
+    
     resultsContainer.innerHTML = `
         <div class="result-card ${resultClass}">
             <div class="result-title">[${resultIcon}] ${resultTitle}</div>
-            <p><strong>File:</strong> ${result.filename}</p>
+            ${isHashAnalysis ? 
+                `<p><strong>Hash Type:</strong> ${result.hash_type || 'SHA-256'}</p>` :
+                `<p><strong>File:</strong> ${result.filename}</p>`
+            }
             <p><strong>Hash:</strong> ${result.hash}</p>
             <p><strong>Analysis Method:</strong> ${result.source}</p>
             <p><strong>Confidence:</strong> ${confidencePercent}% (${result.confidence_category})</p>
@@ -161,6 +288,8 @@ function displayResults(result) {
                     <div class="confidence-fill" style="width: ${threatPercent}%; background-color: ${threatColor};"></div>
                 </div>
             ` : ''}
+            
+            ${additionalInfo}
             
             <p><strong>Analysis Results:</strong></p>
             <p>${result.rationale}</p>
@@ -192,6 +321,8 @@ function displayResults(result) {
         <div style="background: #e9ecef; padding: 15px; border-radius: 10px; font-size: 0.9em; color: #666;">
             <strong>Important:</strong> This analysis is for educational and research purposes only. 
             Do not make critical security decisions based on these results alone.
+            ${isHashAnalysis ? '<br><br><strong>Hash Analysis Note:</strong> This analysis checks against local OSINT database and VirusTotal. For comprehensive analysis, consider uploading the actual file.' : ''}
+            ${isVirusTotalResult ? '<br><br><strong>VirusTotal Note:</strong> Results include real-time threat intelligence from VirusTotal\'s network of security vendors.' : ''}
         </div>
     `;
     

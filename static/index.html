@@ -316,6 +316,39 @@
             <input type="file" id="fileInput" class="file-input" accept=".pdf,.exe,.docx,.xlsx">
         </div>
 
+        <!-- Hash Analysis Section -->
+        <div style="text-align: center; margin: 30px 0; color: #666;">
+            <span style="background: #f8f9fa; padding: 10px 20px; border-radius: 20px; font-size: 0.9em;">OR</span>
+        </div>
+
+        <div class="hash-analysis-section" style="border: 2px solid #e9ecef; border-radius: 8px; padding: 30px; background: #fafafa; margin-bottom: 20px;">
+            <h3 style="text-align: center; color: #333; margin-bottom: 20px;">Analyze by File Hash</h3>
+            <p style="text-align: center; color: #666; margin-bottom: 20px; font-size: 0.9em;">
+                Enter a file hash (SHA-256, MD5, or SHA-1) to check against known malicious databases
+            </p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <select id="hashType" style="flex: 0 0 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background: white;">
+                    <option value="sha256">SHA-256</option>
+                    <option value="md5">MD5</option>
+                    <option value="sha1">SHA-1</option>
+                </select>
+                <input type="text" id="hashInput" placeholder="Enter file hash here..." 
+                       style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 0.9em;">
+            </div>
+            
+            <button id="analyzeHashBtn" class="analyze-btn" style="display: block; background: #007bff; margin: 0 auto;">
+                🔍 Analyze Hash
+            </button>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 4px; font-size: 0.85em; color: #666;">
+                <strong>Supported hash formats:</strong><br>
+                • SHA-256: 64 characters (e.g., a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3)<br>
+                • MD5: 32 characters (e.g., 5d41402abc4b2a76b9719d911017c592)<br>
+                • SHA-1: 40 characters (e.g., aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d)
+            </div>
+        </div>
+
         <div class="error" id="error"></div>
 
         <div class="file-info" id="fileInfo">

@@ -1,6 +1,7 @@
 import hashlib
 import requests
 import os
+import time
 from typing import Dict, Optional, Tuple
 
 class OSINTChecker:
@@ -22,6 +23,18 @@ class OSINTChecker:
             "cd2eb0837c9b4c962c22d2ff8b5441b7b45805887f051d39bf133b583baf6860": "Known malware - Suspicious PDF",
             "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3": "Known malware - Suspicious executable"
         }
+        
+        # VirusTotal API configuration
+        self.virustotal_api_key = os.getenv('VIRUSTOTAL_API_KEY', '64c677585c0856c000004edf7292f93a6feb8c12a7062f2c400e9a51328d720d')
+        self.virustotal_base_url = "https://www.virustotal.com/api/v3"
+        self.virustotal_headers = {
+            "accept": "application/json",
+            "x-apikey": self.virustotal_api_key
+        }
+        
+        # Rate limiting for VirusTotal API
+        self.last_vt_request = 0
+        self.vt_rate_limit_delay = 1.0  # 1 second between requests (free tier limit)
     
     def calculate_hash(self, file_path: str) -> str:
         """Calculate SHA-256 hash of a file"""
@@ -35,13 +48,113 @@ class OSINTChecker:
         except Exception as e:
             raise Exception(f"Error calculating hash: {str(e)}")
     
+    def _rate_limit_virustotal(self):
+        """Implement rate limiting for VirusTotal API"""
+        current_time = time.time()
+        time_since_last = current_time - self.last_vt_request
+        if time_since_last < self.vt_rate_limit_delay:
+            sleep_time = self.vt_rate_limit_delay - time_since_last
+            time.sleep(sleep_time)
+        self.last_vt_request = time.time()
+    
+    def check_virustotal(self, file_hash: str) -> Tuple[bool, Optional[str], Optional[Dict]]:
+        """
+        Check hash against VirusTotal API
+        Returns: (is_malicious, source_info, details)
+        """
+        if not self.virustotal_api_key:
+            return False, None, None
+        
+        try:
+            # Rate limiting
+            self._rate_limit_virustotal()
+            
+            # Make API request
+            url = f"{self.virustotal_base_url}/files/{file_hash}"
+            response = requests.get(url, headers=self.virustotal_headers, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                file_info = data.get('data', {}).get('attributes', {})
+                
+                # Get analysis stats
+                last_analysis_stats = file_info.get('last_analysis_stats', {})
+                malicious_count = last_analysis_stats.get('malicious', 0)
+                suspicious_count = last_analysis_stats.get('suspicious', 0)
+                total_engines = sum(last_analysis_stats.values())
+                
+                # Get detailed analysis results
+                last_analysis_results = file_info.get('last_analysis_results', {})
+                
+                # Determine if malicious
+                is_malicious = malicious_count > 0
+                
+                if is_malicious:
+                    # Get names of engines that detected malware
+                    malicious_engines = []
+                    for engine_name, result in last_analysis_results.items():
+                        if result.get('category') == 'malicious':
+                            malicious_engines.append(engine_name)
+                    
+                    source_info = f"VirusTotal: {malicious_count} engines detected malware"
+                    details = {
+                        "source": "VirusTotal API",
+                        "hash": file_hash,
+                        "malicious_count": malicious_count,
+                        "suspicious_count": suspicious_count,
+                        "total_engines": total_engines,
+                        "malicious_engines": malicious_engines[:5],  # Limit to first 5
+                        "detection_ratio": f"{malicious_count}/{total_engines}",
+                        "last_analysis_date": file_info.get('last_analysis_date'),
+                        "reputation": file_info.get('reputation', 0)
+                    }
+                    
+                    return True, source_info, details
+                else:
+                    # File is clean
+                    details = {
+                        "source": "VirusTotal API",
+                        "hash": file_hash,
+                        "malicious_count": 0,
+                        "suspicious_count": suspicious_count,
+                        "total_engines": total_engines,
+                        "detection_ratio": f"0/{total_engines}",
+                        "last_analysis_date": file_info.get('last_analysis_date'),
+                        "reputation": file_info.get('reputation', 0)
+                    }
+                    
+                    return False, "VirusTotal: No engines detected malware", details
+            
+            elif response.status_code == 404:
+                # Hash not found in VirusTotal database
+                return False, "VirusTotal: Hash not found in database", {
+                    "source": "VirusTotal API",
+                    "hash": file_hash,
+                    "status": "not_found"
+                }
+            
+            else:
+                # API error
+                print(f"VirusTotal API error: {response.status_code} - {response.text}")
+                return False, None, None
+                
+        except requests.exceptions.Timeout:
+            print("VirusTotal API timeout")
+            return False, None, None
+        except requests.exceptions.RequestException as e:
+            print(f"VirusTotal API request error: {str(e)}")
+            return False, None, None
+        except Exception as e:
+            print(f"VirusTotal API error: {str(e)}")
+            return False, None, None
+    
     def check_osint_databases(self, file_hash: str) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """
-        Check hash against OSINT databases
+        Check hash against OSINT databases (local + VirusTotal)
         Returns: (is_malicious, source_info, details)
         """
         try:
-            # Check against local mock database
+            # First, check local mock database
             if file_hash in self.malicious_hashes:
                 return True, self.malicious_hashes[file_hash], {
                     "source": "Mock OSINT Database",
@@ -50,46 +163,21 @@ class OSINTChecker:
                     "threat_type": "Known malware"
                 }
             
-            # In production, you would make API calls to real OSINT services here
-            # Example: VirusTotal API integration
-            # return self._check_virustotal(file_hash)
+            # If not found locally, check VirusTotal
+            vt_is_malicious, vt_source_info, vt_details = self.check_virustotal(file_hash)
             
-            return False, None, None
+            if vt_is_malicious:
+                return True, vt_source_info, vt_details
+            elif vt_source_info:  # VT returned a result (clean or not found)
+                return False, vt_source_info, vt_details
+            else:
+                # VT failed, return local-only result
+                return False, None, None
             
         except Exception as e:
             # Log error but don't fail the entire analysis
             print(f"OSINT check error: {str(e)}")
             return False, None, None
-    
-    def _check_virustotal(self, file_hash: str) -> Tuple[bool, Optional[str], Optional[Dict]]:
-        """
-        Check hash against VirusTotal API (example implementation)
-        Note: Requires API key and proper error handling
-        """
-        # This is a template for VirusTotal integration
-        # api_key = os.getenv('VIRUSTOTAL_API_KEY')
-        # if not api_key:
-        #     return False, None, None
-        
-        # url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
-        # headers = {"x-apikey": api_key}
-        
-        # try:
-        #     response = requests.get(url, headers=headers, timeout=10)
-        #     if response.status_code == 200:
-        #         data = response.json()
-        #         stats = data.get('data', {}).get('attributes', {}).get('last_analysis_stats', {})
-        #         malicious_count = stats.get('malicious', 0)
-        #         
-        #         if malicious_count > 0:
-        #             return True, f"VirusTotal: {malicious_count} engines detected malware", data
-        #     
-        #     return False, None, None
-        # except Exception as e:
-        #     print(f"VirusTotal API error: {str(e)}")
-        #     return False, None, None
-        
-        return False, None, None
     
     def analyze_file(self, file_path: str) -> Dict:
         """
