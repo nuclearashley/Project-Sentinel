@@ -49,7 +49,7 @@ def upload_file():
             analysis_time = time.time() - start_time
             
             if result.get('success', False):
-                # Format response with new confidence system
+                # Format response with new confidence system and AI enhancements
                 response = {
                     'filename': result['filename'],
                     'hash': result['hash'],
@@ -64,7 +64,14 @@ def upload_file():
                     'features': result['features'],
                     'details': result.get('details'),
                     'analysis_time': analysis_time,
-                    'threat_level': ai_analyzer.get_threat_level(result['threat_score'], result['is_malicious'])
+                    'threat_level': ai_analyzer.get_threat_level(result['threat_score'], result['is_malicious']),
+                    # AI-enhanced results
+                    'ai_threat_assessment': result.get('ai_threat_assessment'),
+                    'ai_security_analysis': result.get('ai_security_analysis'),
+                    'ai_risk_factors': result.get('ai_risk_factors'),
+                    'ai_recommendations': result.get('ai_recommendations'),
+                    'ai_confidence': result.get('ai_confidence', 0.0),
+                    'ai_available': ai_analyzer.ai_service.is_available()
                 }
                 
                 return jsonify(response), 200
@@ -180,7 +187,14 @@ def analyze_hash():
             'features': None,
             'details': details,
             'analysis_time': analysis_time,
-            'threat_level': ai_analyzer.get_threat_level(threat_score, is_malicious)
+            'threat_level': ai_analyzer.get_threat_level(threat_score, is_malicious),
+            # AI service availability for hash analysis
+            'ai_available': ai_analyzer.ai_service.is_available(),
+            'ai_threat_assessment': 'HASH_ONLY_ANALYSIS',  # Hash analysis doesn't use AI
+            'ai_security_analysis': 'Hash-based analysis only - no content analysis performed',
+            'ai_risk_factors': None,
+            'ai_recommendations': None,
+            'ai_confidence': 0.0
         }
         
         return jsonify(response), 200

@@ -5,6 +5,7 @@ from .osint_checker import OSINTChecker
 from .pdf_analyzer import PDFAnalyzer
 from .office_analyzer import OfficeAnalyzer
 from .pe_analyzer import PEAnalyzer
+from .ai_service import AIService
 
 class AIAnalyzer:
     """
@@ -16,6 +17,7 @@ class AIAnalyzer:
         self.pdf_analyzer = PDFAnalyzer()
         self.office_analyzer = OfficeAnalyzer()
         self.pe_analyzer = PEAnalyzer()
+        self.ai_service = AIService()  # Initialize Claude AI service
         
         # Supported file extensions
         self.supported_extensions = {
@@ -75,16 +77,42 @@ class AIAnalyzer:
             # Perform file-specific analysis
             analysis_result = analyzer.analyze_file(file_path)
             
-            # Combine OSINT and AI analysis results
-            # Use AI threat score since OSINT was clean
+            # Extract detected patterns for AI analysis
+            detected_patterns = self._extract_patterns_from_analysis(analysis_result)
+            
+            # Enhance with AI-powered analysis
+            if self.ai_service.is_available():
+                print(f"🤖 Enhancing analysis with Claude AI for {filename}...")
+                ai_enhanced_result = self.ai_service.analyze_threat_context(
+                    file_type=ext.upper().replace('.', ''),
+                    analysis_results=analysis_result,
+                    detected_patterns=detected_patterns
+                )
+                
+                # Get AI confidence assessment
+                ai_confidence_data = self.ai_service.assess_confidence(analysis_result)
+                
+                # Combine AI enhancements
+                analysis_result.update(ai_enhanced_result)
+                analysis_result.update(ai_confidence_data)
+                
+                print(f"✅ AI analysis completed. Threat assessment: {ai_enhanced_result.get('ai_threat_assessment', 'Unknown')}")
+            else:
+                print("⚠️  AI service unavailable - using rule-based analysis only")
+            
+            # Combine OSINT and enhanced analysis results
             threat_score = analysis_result['threat_score']
             
-            # Combine confidence levels - if OSINT was clean and AI has high confidence, overall confidence is high
+            # Combine confidence levels (include AI confidence if available)
             osint_confidence = osint_result['confidence_level']
-            ai_confidence = analysis_result['confidence_level']
+            rule_confidence = analysis_result['confidence_level']
+            ai_confidence = analysis_result.get('ai_confidence', 0.0)
             
-            # Weighted average of confidences (OSINT gets slightly more weight if available)
-            combined_confidence = (osint_confidence * 0.3) + (ai_confidence * 0.7)
+            # Weighted confidence: OSINT (20%), Rules (40%), AI (40%)
+            if ai_confidence > 0:
+                combined_confidence = (osint_confidence * 0.2) + (rule_confidence * 0.4) + (ai_confidence * 0.4)
+            else:
+                combined_confidence = (osint_confidence * 0.3) + (rule_confidence * 0.7)
             
             # Combine confidence factors
             combined_factors = osint_result['confidence_factors'] + analysis_result['confidence_factors']
@@ -102,7 +130,13 @@ class AIAnalyzer:
                 'source': analysis_result['source'],
                 'rationale': analysis_result['rationale'],
                 'features': analysis_result['features'],
-                'details': None
+                'details': None,
+                # Include AI-specific results
+                'ai_threat_assessment': analysis_result.get('ai_threat_assessment'),
+                'ai_security_analysis': analysis_result.get('ai_security_analysis'),
+                'ai_risk_factors': analysis_result.get('ai_risk_factors'),
+                'ai_recommendations': analysis_result.get('ai_recommendations'),
+                'ai_confidence': analysis_result.get('ai_confidence', 0.0)
             }
             
             return final_result
@@ -221,4 +255,45 @@ Analysis completed successfully.
         elif confidence_level >= 0.4:
             return "Low"
         else:
-            return "Very Low" 
+            return "Very Low"
+    
+    def _extract_patterns_from_analysis(self, analysis_result: Dict[str, Any]) -> list:
+        """
+        Extract detected patterns from analysis results for AI processing
+        """
+        patterns = []
+        
+        # Extract from rationale
+        rationale = analysis_result.get('rationale', '')
+        if 'JavaScript patterns found' in rationale:
+            patterns.append('Suspicious JavaScript patterns detected')
+        if 'suspicious objects found' in rationale or 'Suspicious PDF objects found' in rationale:
+            patterns.append('Suspicious PDF objects detected')
+        if 'Multiple URLs found' in rationale:
+            patterns.append('Multiple external URLs detected')
+        if 'Suspicious API calls found' in rationale:
+            patterns.append('Dangerous API calls detected')
+        if 'Macro patterns found' in rationale:
+            patterns.append('Suspicious macro patterns detected')
+        if 'packed/obfuscated' in rationale:
+            patterns.append('File packing/obfuscation detected')
+        if 'Suspicious strings found' in rationale:
+            patterns.append('Suspicious string patterns detected')
+        
+        # Extract from features if available
+        features = analysis_result.get('features', {})
+        if isinstance(features, dict):
+            if features.get('found_patterns'):
+                patterns.extend(features['found_patterns'][:5])  # Limit to first 5
+            
+            # Add feature-based patterns
+            if features.get('suspicious_apis', 0) > 0:
+                patterns.append(f"Suspicious API imports: {features['suspicious_apis']}")
+            if features.get('is_packed', False):
+                patterns.append("Executable packing detected")
+            if features.get('suspicious_patterns', 0) > 0:
+                patterns.append(f"Suspicious content patterns: {features['suspicious_patterns']}")
+        
+        # Remove duplicates and limit length
+        unique_patterns = list(set(patterns))
+        return unique_patterns[:10]  # Limit to top 10 patterns 

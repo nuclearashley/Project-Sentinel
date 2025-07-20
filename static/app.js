@@ -294,6 +294,37 @@ function displayResults(result) {
             <p><strong>Analysis Results:</strong></p>
             <p>${result.rationale}</p>
             
+            ${result.ai_available && result.ai_security_analysis ? `
+                <details style="margin-top: 15px;">
+                    <summary style="cursor: pointer; font-weight: bold;">🤖 AI Security Analysis</summary>
+                    <div style="margin-top: 10px; padding: 10px; background: #f0f7ff; border-left: 4px solid #007bff; border-radius: 5px;">
+                        <p><strong>AI Threat Assessment:</strong> ${result.ai_threat_assessment || 'N/A'}</p>
+                        <p><strong>Security Analysis:</strong></p>
+                        <p>${result.ai_security_analysis}</p>
+                        ${result.ai_risk_factors ? `
+                            <p><strong>Risk Factors:</strong></p>
+                            <p>${result.ai_risk_factors}</p>
+                        ` : ''}
+                        ${result.ai_recommendations ? `
+                            <p><strong>Recommendations:</strong></p>
+                            <p>${result.ai_recommendations}</p>
+                        ` : ''}
+                        ${result.ai_confidence > 0 ? `
+                            <p><strong>AI Confidence:</strong> ${Math.round(result.ai_confidence * 100)}%</p>
+                        ` : ''}
+                    </div>
+                </details>
+            ` : result.ai_available === false ? `
+                <details style="margin-top: 15px;">
+                    <summary style="cursor: pointer; font-weight: bold;">🤖 AI Analysis (Unavailable)</summary>
+                    <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                        <p><strong>AI Service Status:</strong> Not configured</p>
+                        <p>To enable AI-powered threat analysis, set your ANTHROPIC_API_KEY environment variable.</p>
+                        <p>Currently using rule-based analysis only.</p>
+                    </div>
+                </details>
+            ` : ''}
+            
             ${result.confidence_factors && result.confidence_factors.length > 0 ? `
                 <details style="margin-top: 15px;">
                     <summary style="cursor: pointer; font-weight: bold;">What makes us confident about this result?</summary>
