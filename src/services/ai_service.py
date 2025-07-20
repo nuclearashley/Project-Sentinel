@@ -18,14 +18,18 @@ class AIService:
             print("   Set your API key: export ANTHROPIC_API_KEY='your_key_here'")
             self.client = None
         else:
-            self.client = Anthropic(api_key=self.api_key)
+            try:
+                self.client = Anthropic(api_key=self.api_key)
+            except Exception as e:
+                print(f"⚠️  WARNING: Failed to initialize Anthropic client: {str(e)}")
+                self.client = None
         
         # Rate limiting
         self.last_request_time = 0
         self.min_request_interval = 1.0  # Minimum 1 second between requests
         
         # Model configuration
-        self.model = "claude-3-sonnet-20240229"  # Use Claude 3 Sonnet for balanced performance/cost
+        self.model = "claude-3-5-sonnet-20241022"  # Use Claude 3.5 Sonnet for latest capabilities
         self.max_tokens = 1000
         
     def _rate_limit(self):
