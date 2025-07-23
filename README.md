@@ -10,13 +10,13 @@ Project Sentinel is a comprehensive AI-driven malware detection system that anal
 
 ## Features
 
-### 🤖 **AI-Powered Analysis**
+### **AI-Powered Analysis**
 - **Claude AI Integration**: Uses Anthropic's Claude 3.5 Sonnet for intelligent threat analysis
 - **Natural Language Explanations**: Human-readable security assessments and recommendations
 - **Contextual Risk Analysis**: AI understands file patterns and provides specific threat insights
 - **Dynamic Confidence Scoring**: AI-enhanced confidence ratings based on multiple analysis factors
 
-### 🔍 **Core Capabilities**
+### **Core Capabilities**
 - **Multi-format Support**: Analyzes PDF, EXE, DOCX, and XLSX files
 - **Triple Analysis Approach**: 
   - OSINT database lookup for known malicious hashes
@@ -46,9 +46,9 @@ Project Sentinel is a comprehensive AI-driven malware detection system that anal
 - **PDF Analyzer**: Examines PDF documents for malicious JavaScript, suspicious objects, and encoding patterns
 - **Office Analyzer**: Analyzes DOCX/XLSX files for macros, suspicious APIs, and content patterns
 - **PE Analyzer**: Examines Windows executables for suspicious imports, packing, and structural anomalies
-- **🤖 AI Analyzer**: Claude API integration for intelligent threat assessment and explanation
+- **AI Analyzer**: Claude API integration for intelligent threat assessment and explanation
 
-## 🤖 AI-Powered Components
+## AI-Powered Components
 
 ### **AI Service Architecture**
 ```python
@@ -103,7 +103,7 @@ def ai_enhanced_analysis(file_data, rule_patterns):
 
 When you upload a file, you'll see sections like:
 
-**🤖 AI Security Analysis:**
+**AI Security Analysis:**
 ```
 This PDF exhibits several concerning characteristics typical of potentially 
 malicious PDF documents. The presence of /OpenAction combined with JavaScript 
@@ -116,7 +116,7 @@ Key Concerns:
 4. System interaction capabilities (printing functions)
 ```
 
-**⚠️ Risk Factors:**
+**Risk Factors:**
 ```
 1. Remote Code Execution potential through JavaScript
 2. Unauthorized network connections via app.launchURL
@@ -124,7 +124,7 @@ Key Concerns:
 4. Possible system information gathering
 ```
 
-**💡 AI Recommendations:**
+**AI Recommendations:**
 ```
 IMMEDIATE: Open only in sandboxed environment, disable JavaScript
 PROCEDURAL: Scan with updated antivirus, monitor network connections
@@ -202,7 +202,7 @@ pip install numpy scipy scikit-learn
 
 ### Step 4: Configure AI Integration
 
-#### **🤖 Set Up Claude AI (Required for AI Features)**
+#### **Set Up Claude AI (Required for AI Features)**
 
 **Option A: Interactive Setup (Recommended)**
 ```bash
@@ -231,14 +231,14 @@ chmod +x start_ai_enabled.sh
 ./start_ai_enabled.sh
 ```
 
-#### **🔑 Getting Your Anthropic API Key**
+#### **Getting Your Anthropic API Key**
 1. Visit [Anthropic Console](https://console.anthropic.com/)
 2. Create an account or sign in
 3. Navigate to API Keys section
 4. Create a new API key
 5. Copy the key (starts with `sk-ant-api03-...`)
 
-**💰 Cost Note**: Academic usage typically costs $2-5/month (~$0.02-0.05 per analysis)
+**Cost Note**: Academic usage typically costs $2-5/month (~$0.02-0.05 per analysis)
 
 ### Step 5: Verify Installation
 
@@ -253,10 +253,10 @@ python -c "from config import config; config.print_config_status()"
 
 You should see:
 ```
-🔧 Configuration Status:
-   AI Enabled: ✅
+Configuration Status:
+   AI Enabled: YES
    Anthropic Key: sk-ant-api...
-   VirusTotal: ✅
+   VirusTotal: YES
    AI Model: claude-3-5-sonnet-20241022
 ```
 
@@ -273,7 +273,7 @@ This script will test all package imports and AI integration, providing specific
 
 ## Running the Application
 
-### 🚀 **AI-Enabled Startup**
+### **AI-Enabled Startup**
 
 **Option A: One-Command Startup (Easiest)**
 ```bash
@@ -297,24 +297,24 @@ set ANTHROPIC_API_KEY=your_api_key_here       # Windows
 python main.py
 ```
 
-### ✅ **Verify AI is Working**
+### **Verify AI is Working**
 
 When you start the server, you should see:
 ```
-✅ AI service initialized with Claude API
-🛡️  Project Sentinel - AI-Driven Malware Detection
+AI service initialized with Claude API
+Project Sentinel - AI-Driven Malware Detection
 ==================================================
-🔧 Configuration Status:
-   AI Enabled: ✅
+Configuration Status:
+   AI Enabled: YES
    Anthropic Key: sk-ant-api...
-   VirusTotal: ✅
+   VirusTotal: YES
    AI Model: claude-3-5-sonnet-20241022
 Starting server on http://localhost:5001
 ```
 
-**⚠️ If you see this instead:**
+**If you see this instead:**
 ```
-⚠️  WARNING: ANTHROPIC_API_KEY not found. AI analysis will be disabled.
+WARNING: ANTHROPIC_API_KEY not found. AI analysis will be disabled.
 ```
 Then your API key isn't configured properly. Use the setup instructions above.
 

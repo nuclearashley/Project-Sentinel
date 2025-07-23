@@ -18,19 +18,19 @@ else
 fi
 
 # Check if Python is available
-if ! command -v python &> /dev/null; then
-    echo "❌ Error: Python not found. Please install Python 3.7+"
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Error: Python3 not found. Please install Python 3.7+"
     exit 1
 fi
 
 # Install dependencies if needed
 echo "📦 Checking dependencies..."
-pip install -q -r requirements.txt
+pip3 install -q -r requirements.txt
 
 # Start the application
 echo "🚀 Starting Project Sentinel..."
-echo "   Open http://localhost:5001 in your browser"
+echo "   Open http://localhost:5002 in your browser"
 echo "   Press Ctrl+C to stop"
 echo "====================================="
 
-python main.py 
+python3 main.py 

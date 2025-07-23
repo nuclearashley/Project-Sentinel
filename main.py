@@ -41,7 +41,7 @@ def serve(path):
 if __name__ == '__main__':
     print("🛡️  Project Sentinel - AI-Driven Malware Detection")
     print("=" * 50)
-    print("Starting server on http://localhost:5001")
+    print("Starting server on http://localhost:5002")
     print("Press Ctrl+C to stop the server")
     print("=" * 50)
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
